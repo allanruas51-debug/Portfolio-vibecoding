@@ -49,6 +49,7 @@
     --H: 1672;
     --fx: 0.5;
     --fy: 0.62;
+    --kfy: 0.55;
   }
 }
 
@@ -114,6 +115,11 @@ body {
   pointer-events: none;
 }
 
+/* camadas com parallax/transição: compostas na GPU, sem repintar */
+.layer[data-depth] {
+  will-change: transform;
+}
+
 .stage {
   position: absolute;
   width: calc(var(--W) * var(--uc));
@@ -122,9 +128,13 @@ body {
   top: calc((100dvh - var(--H) * var(--uc)) * var(--fy));
 }
 
-/* grading do céu: um pouco mais de contraste e saturação, como na ref */
-.stage > picture > img {
-  filter: saturate(var(--sky-sat, 1.14)) contrast(var(--sky-con, 1.07)) brightness(var(--sky-bri, 0.98));
+/* palco "contain" (boneco): nunca corta a lua/os pés em proporções extremas */
+.stage-fit {
+  position: absolute;
+  width: calc(var(--W) * var(--un));
+  height: calc(var(--H) * var(--un));
+  left: calc((100vw - var(--W) * var(--un)) * var(--fx));
+  top: calc((100dvh - var(--H) * var(--un)) * var(--kfy, 0.5));
 }
 
 .stage > picture,
@@ -152,7 +162,7 @@ body {
 
 /* camada 5: nuvens de primeiro plano (máscara gerada a partir do céu) */
 .fg-clouds {
-  --fg-mask: url("/media/fg-mask-desktop.png");
+  --fg-mask: url("/media/fg-mask-desktop.webp");
   mask-image: var(--fg-mask);
   mask-size: 100% 100%;
   mask-repeat: no-repeat;
@@ -160,7 +170,7 @@ body {
 
 @media (orientation: portrait) {
   .fg-clouds {
-    --fg-mask: url("/media/fg-mask-mobile.png");
+    --fg-mask: url("/media/fg-mask-mobile.webp");
   }
 }
 
@@ -627,9 +637,8 @@ body {
 
 .ui-cta {
   position: absolute;
-  --x: 1390;
   --y: 36;
-  left: calc(var(--x) * var(--ux) - var(--safe-r));
+  right: calc(62 * var(--ux) + var(--safe-r));
   top: calc(var(--y) * var(--uy) + var(--safe-t));
   width: calc(220 * var(--un));
   min-width: 184px;
@@ -671,8 +680,9 @@ body {
 }
 
 .ui-tagline {
-  --x: 1543;
   --y: 150;
+  left: auto;
+  right: calc(40 * var(--ux) + var(--safe-r));
 }
 
 .ui-pillars {
@@ -683,7 +693,7 @@ body {
 .ui-stack {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--step, 19.3) * var(--un) - 1em * 0.7);
+  gap: max(3px, calc(var(--step, 19.3) * var(--un) - 1em * 0.7));
   font-weight: 500;
   color: rgb(232 241 255 / 0.92);
   white-space: nowrap;
@@ -712,9 +722,8 @@ body {
 
 .ui-scroll {
   position: absolute;
-  --x: 1528;
   --y: 806;
-  left: calc(var(--x) * var(--ux) - var(--safe-r));
+  right: calc(46 * var(--ux) + var(--safe-r));
   top: calc(var(--y) * var(--uy));
   display: flex;
   align-items: flex-start;
@@ -780,21 +789,21 @@ body {
     --y: 300;
     left: 50%;
     translate: -50% 0;
-    font-size: calc(260 * var(--ux));
+    font-size: calc(260 * var(--un));
     text-align: center;
     transform-origin: 50% 0;
   }
 
   .hero-title .word {
     display: block;
-    margin-bottom: calc(16 * var(--ux));
+    margin-bottom: calc(16 * var(--un));
   }
 
   /* na ref mobile "VIBE" é espaçado para alinhar com "CODING" */
   /* deslocado à esquerda para abrir espaço ao "Presença digital…";
      margem (e não transform/position) para continuar dentro do clip do texto */
   .hero-title .word:first-child {
-    margin-left: calc(-120 * var(--ux));
+    margin-left: calc(-120 * var(--un));
     letter-spacing: 0.19em;
     margin-right: -0.19em;
   }
@@ -804,8 +813,8 @@ body {
   }
 
   .ui-tagline {
-    --x: 773;
     --y: 357;
+    right: calc(52 * var(--ux) + var(--safe-r));
     padding-left: calc(15 * var(--ux));
     border-left: 1px solid rgb(220 235 255 / 0.55);
   }
@@ -842,8 +851,8 @@ body {
   }
 
   .ui-scroll {
-    --x: 745;
     --y: 1522;
+    right: calc(55 * var(--ux) + var(--safe-r));
     --step: 24;
     gap: calc(19 * var(--ux));
   }
@@ -1096,5 +1105,17 @@ body {
   .hero-title {
     -webkit-text-stroke: 1.5px rgb(178 220 255 / 0.85);
     filter: drop-shadow(0 0 6px rgb(90 170 255 / 0.75)) drop-shadow(0 0 22px rgb(40 120 255 / 0.45));
+  }
+}
+
+/* celulares: o piso de 10px alarga os rótulos; abre espaço para o
+   "Presença digital…" sem encostar no "E" de VIBE */
+@media (orientation: portrait) and (max-width: 480px) {
+  .ui-tagline .ui-label {
+    letter-spacing: 0.1em;
+  }
+
+  .hero-title .word:first-child {
+    margin-left: calc(-250 * var(--un));
   }
 }

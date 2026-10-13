@@ -13,9 +13,13 @@ const jobs = [
   { src: `${SRC}/bg-mobile-limpo.png`, name: "sky-mobile", widths: [640, 940] },
 ];
 
+// grading do céu (antes era filter CSS em tempo real — caro nas camadas
+// em movimento): +14% saturação, -2% brilho, +7% contraste
+const grade = (img) => img.modulate({ saturation: 1.14, brightness: 0.98 }).linear(1.07, -128 * 0.07);
+
 for (const job of jobs) {
   for (const w of job.widths) {
-    const img = sharp(job.src).resize({ width: w, withoutEnlargement: true });
+    const img = grade(sharp(job.src).resize({ width: w, withoutEnlargement: true }));
     await img.clone().avif({ quality: 58, effort: 6 }).toFile(`${OUT}/${job.name}-${w}.avif`);
     await img.clone().webp({ quality: 80, effort: 6 }).toFile(`${OUT}/${job.name}-${w}.webp`);
     console.log(job.name, w);

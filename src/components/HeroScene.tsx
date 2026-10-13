@@ -47,15 +47,18 @@ export function HeroScene({ id, active, visible, register }: SectionProps) {
   useLayoutEffect(() => {
     const gsap = ensureGsap();
     if (prefersReducedMotion()) {
-      gsap.set([sky.current, horizon.current, title.current, charLayer.current, front.current], { autoAlpha: 0 });
+      gsap.set([title.current, charLayer.current], { autoAlpha: 0 });
       gsap.set(ui.current!.querySelectorAll("[data-ui]"), { autoAlpha: 0 });
       return;
     }
-    gsap.set(sky.current, { autoAlpha: 0, scale: 1.18 });
-    gsap.set(horizon.current, { autoAlpha: 0, y: 60 });
+    // céu, horizonte e nuvens da frente ficam opacos desde o primeiro paint
+    // (são candidatos a LCP);
+    // o "fade" deles vem do próprio loader saindo — aqui só zoom/subida
+    gsap.set(sky.current, { scale: 1.18 });
+    gsap.set(horizon.current, { y: 60 });
     gsap.set(title.current!.querySelector("h1"), { clipPath: "inset(100% 0% 0% 0%)" });
     gsap.set(charLayer.current, { autoAlpha: 0, y: 140 });
-    gsap.set(front.current, { autoAlpha: 0, y: 90 });
+    gsap.set(front.current, { y: 90 });
     gsap.set(ui.current!.querySelectorAll("[data-ui]"), { autoAlpha: 0, y: 16 });
   }, []);
 
@@ -66,16 +69,16 @@ export function HeroScene({ id, active, visible, register }: SectionProps) {
     const gsap = ensureGsap();
     const uiItems = ui.current!.querySelectorAll("[data-ui]");
     if (prefersReducedMotion()) {
-      gsap.to([sky.current, horizon.current, title.current, charLayer.current, front.current, ...uiItems], {
+      gsap.to([title.current, charLayer.current, ...uiItems], {
         autoAlpha: 1,
         duration: 0.4,
       });
       return;
     }
     const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
-    tl.to(sky.current, { autoAlpha: 1, scale: 1, duration: 1.8 }, 0)
-      .to(horizon.current, { autoAlpha: 1, y: 0, duration: 1.5 }, 0.15)
-      .to(front.current, { autoAlpha: 1, y: 0, duration: 1.5 }, 0.3)
+    tl.to(sky.current, { scale: 1, duration: 1.8 }, 0)
+      .to(horizon.current, { y: 0, duration: 1.5 }, 0.15)
+      .to(front.current, { y: 0, duration: 1.5 }, 0.3)
       .to(title.current!.querySelector("h1"), { clipPath: "inset(0% 0% 0% 0%)", duration: 1.2, ease: "power4.out" }, 0.45)
       .to(charLayer.current, { autoAlpha: 1, y: 0, duration: 1.6, ease: "power3.out" }, 0.6)
       .to(uiItems, { autoAlpha: 1, y: 0, duration: 0.9, stagger: 0.06, ease: "power3.out" }, 1.0);
@@ -168,7 +171,7 @@ export function HeroScene({ id, active, visible, register }: SectionProps) {
         </div>
 
         <div ref={charLayer} className="layer char-layer" data-depth="0.9" data-tilt="6">
-          <div className="stage">
+          <div className="stage-fit">
             <CharacterScene ref={charBtn} playing={visible} onActivate={onActivate} priority />
           </div>
         </div>

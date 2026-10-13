@@ -24,11 +24,13 @@ export function FullpageController({ sections }: { sections: SectionDefinition[]
   const busy = useRef(false);
   const lockedUntil = useRef(0);
 
+  /** `gesture`: wheel/touch respeitam o cooldown de inércia; teclado e cliques não. */
   const go = useCallback(
-    (target: number) => {
+    (target: number, gesture = false) => {
       const from = current.current;
       const to = Math.max(0, Math.min(sections.length - 1, target));
-      if (to === from || busy.current || performance.now() < lockedUntil.current) return;
+      if (to === from || busy.current) return;
+      if (gesture && performance.now() < lockedUntil.current) return;
       const gsap = ensureGsap();
       const dir: Direction = to > from ? 1 : -1;
       const reduced = prefersReducedMotion();
@@ -68,6 +70,8 @@ export function FullpageController({ sections }: { sections: SectionDefinition[]
     ensureGsap();
     const next = () => go(current.current + 1);
     const prev = () => go(current.current - 1);
+    const nextGesture = () => go(current.current + 1, true);
+    const prevGesture = () => go(current.current - 1, true);
 
     // wheelSpeed -1: rolar para baixo e arrastar o dedo para cima viram "onUp"
     const observer = Observer.create({
@@ -77,8 +81,8 @@ export function FullpageController({ sections }: { sections: SectionDefinition[]
       tolerance: 12,
       dragMinimum: 6,
       preventDefault: true,
-      onUp: next,
-      onDown: prev,
+      onUp: nextGesture,
+      onDown: prevGesture,
       // swipes horizontais ficam para o parallax por arrasto
       lockAxis: true,
     });

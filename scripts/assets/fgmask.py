@@ -1,6 +1,6 @@
 """Gera a máscara das nuvens de primeiro plano (camada 5) a partir do próprio
 céu limpo: brilho das nuvens × região (faixa inferior, mais forte à esquerda).
-Saída: PNG só com alpha, usado como CSS mask-image sobre a mesma imagem do céu."""
+Saída: WebP só com alpha, usado como CSS mask-image sobre a mesma imagem do céu."""
 import sys, cv2, numpy as np
 
 def build(src, dst, out_w, region):
@@ -23,11 +23,11 @@ def build(src, dst, out_w, region):
     a = cv2.resize(a, (out_w, out_h), interpolation=cv2.INTER_AREA)
     rgba = np.zeros((out_h, out_w, 4), np.uint8)
     rgba[:, :, 3] = np.clip(a * 255, 0, 255).astype(np.uint8)
-    cv2.imwrite(dst, rgba)
+    cv2.imwrite(dst, rgba, [cv2.IMWRITE_WEBP_QUALITY, 90])
 
 DESKTOP = dict(lum_lo=0.42, lum_hi=0.78, y0=0.85, y1=0.96, lift=0.17, lift_x=0.36, solid=0.99)
 MOBILE = dict(lum_lo=0.38, lum_hi=0.74, y0=0.80, y1=0.91, lift=0.15, lift_x=0.5, solid=0.995)
 
 if __name__ == "__main__":
-    build("assets/source/bg-desktop-limpo.jpg", "public/media/fg-mask-desktop.png", 836, DESKTOP)
-    build("assets/source/bg-mobile-limpo.png", "public/media/fg-mask-mobile.png", 470, MOBILE)
+    build("assets/source/bg-desktop-limpo.jpg", "public/media/fg-mask-desktop.webp", 836, DESKTOP)
+    build("assets/source/bg-mobile-limpo.png", "public/media/fg-mask-mobile.webp", 470, MOBILE)

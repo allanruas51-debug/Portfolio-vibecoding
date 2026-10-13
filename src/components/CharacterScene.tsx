@@ -110,6 +110,8 @@ export const CharacterScene = forwardRef<HTMLButtonElement, Props>(function Char
                 <source media={PORTRAIT} srcSet={character.mobile.poster} type="image/webp" />
                 <img
                   src={character.desktop.poster}
+                  width={character.desktop.size.w}
+                  height={character.desktop.size.h}
                   alt=""
                   decoding="async"
                   fetchPriority={priority ? "high" : "auto"}
@@ -136,7 +138,14 @@ export const CharacterScene = forwardRef<HTMLButtonElement, Props>(function Char
             </span>
             <picture>
               <source media={PORTRAIT} srcSet={character.mobile.glow} type="image/webp" />
-              <img src={character.desktop.glow} alt="" className="char-glow" decoding="async" />
+              <img
+                src={character.desktop.glow}
+                width={character.desktop.size.w}
+                height={character.desktop.size.h}
+                alt=""
+                className="char-glow"
+                decoding="async"
+              />
             </picture>
           </span>
           <span ref={headRef} className="char-head" aria-hidden="true" />

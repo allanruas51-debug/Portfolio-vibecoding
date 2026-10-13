@@ -11,6 +11,8 @@ export type CharacterMedia = {
   hevc: string;
   poster: string;
   glow: string;
+  /** Tamanho intrínseco do poster/glow (px), para width/height no <img>. */
+  size: { w: number; h: number };
 };
 
 export const character: Record<"desktop" | "mobile", CharacterMedia> = {
@@ -21,6 +23,7 @@ export const character: Record<"desktop" | "mobile", CharacterMedia> = {
     hevc: "/media/boneco-desktop.mov",
     poster: "/media/boneco-desktop-poster.webp",
     glow: "/media/boneco-desktop-glow.webp",
+    size: { w: 900, h: 826 },
   },
   mobile: {
     box: { x: 43.0, y: 635.8, w: 854.3, h: 823.3, rot: 0.73 },
@@ -29,5 +32,6 @@ export const character: Record<"desktop" | "mobile", CharacterMedia> = {
     hevc: "/media/boneco-mobile.mov",
     poster: "/media/boneco-mobile-poster.webp",
     glow: "/media/boneco-mobile-glow.webp",
+    size: { w: 720, h: 694 },
   },
 };

@@ -9,6 +9,6 @@ for (const [version, dir] of [["desktop", desk], ["mobile", mob]]) {
   if (!dir) continue;
   const meta = JSON.parse(readFileSync(`${dir}/meta.json`, "utf8"));
   await sharp(`${dir}/poster.png`).webp({ quality: 82, alphaQuality: 90, effort: 6 }).toFile(`public/media/boneco-${version}-poster.webp`);
-  await sharp(`${dir}/glow.png`).resize({ width: Math.round(meta.out[0] / 2) }).webp({ quality: 70, alphaQuality: 80 }).toFile(`public/media/boneco-${version}-glow.webp`);
+  await sharp(`${dir}/glow.png`).webp({ quality: 70, alphaQuality: 80 }).toFile(`public/media/boneco-${version}-glow.webp`);
   console.log(version, JSON.stringify(meta.box), "out", meta.out.join("x"), "frames", meta.frames);
 }

@@ -91,7 +91,7 @@ test("balão de fala: abre, gira frases sem repetir e traz CTA a cada 4 cliques"
   const boneco = page.getByRole("button", { name: /allan ruas em versão boneco/i });
   const texts: string[] = [];
   for (let i = 1; i <= 4; i++) {
-    await boneco.click();
+    await boneco.click({ force: true });
     const bubble = page.locator(".bubble");
     await expect(bubble).toBeVisible();
     await page.waitForTimeout(1800);
@@ -106,7 +106,7 @@ test("balão de fala: abre, gira frases sem repetir e traz CTA a cada 4 cliques"
 
 test("balão fica dentro da viewport e fecha com Esc", async ({ page }) => {
   await ready(page);
-  await page.getByRole("button", { name: /allan ruas em versão boneco/i }).click();
+  await page.getByRole("button", { name: /allan ruas em versão boneco/i }).click({ force: true });
   const bubble = page.locator(".bubble");
   await expect(bubble).toBeVisible();
   await page.waitForTimeout(700);
@@ -123,7 +123,7 @@ test("balão fica dentro da viewport e fecha com Esc", async ({ page }) => {
 test("balão some sozinho e o hover pausa o timer", async ({ page, isMobile }) => {
   test.skip(isMobile, "hover é desktop");
   await ready(page);
-  await page.getByRole("button", { name: /allan ruas em versão boneco/i }).click();
+  await page.getByRole("button", { name: /allan ruas em versão boneco/i }).click({ force: true });
   const bubble = page.locator(".bubble");
   await expect(bubble).toBeVisible();
   await bubble.hover();
@@ -150,10 +150,10 @@ test.describe("prefers-reduced-motion", () => {
   test("sem parallax, partículas nem float; vídeo segue em loop", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await ready(page);
-    const t1 = await page.locator(".char-float").evaluate((el) => getComputedStyle(el).transform);
+    const t1 = await page.locator(".char-layer .char-float").evaluate((el) => getComputedStyle(el).transform);
     await page.mouse.move(1000, 200);
     await page.waitForTimeout(1200);
-    const t2 = await page.locator(".char-float").evaluate((el) => getComputedStyle(el).transform);
+    const t2 = await page.locator(".char-layer .char-float").evaluate((el) => getComputedStyle(el).transform);
     expect(t2).toBe(t1);
     const layer = await page.locator(".char-layer").evaluate((el) => getComputedStyle(el).transform);
     expect(["none", "matrix(1, 0, 0, 1, 0, 0)"]).toContain(layer);

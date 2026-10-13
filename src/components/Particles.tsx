@@ -42,6 +42,18 @@ export function Particles({ running }: { running: boolean }) {
     });
     const ps = Array.from({ length: COUNT }, () => spawn(true));
 
+    // sprite do brilho pré-renderizado: drawImage é bem mais barato que
+    // criar um radial-gradient por partícula a cada frame
+    const SPRITE = 32;
+    const sprite = document.createElement("canvas");
+    sprite.width = sprite.height = SPRITE;
+    const sctx = sprite.getContext("2d")!;
+    const grad = sctx.createRadialGradient(SPRITE / 2, SPRITE / 2, 0, SPRITE / 2, SPRITE / 2, SPRITE / 2);
+    grad.addColorStop(0, "rgba(255, 240, 215, 1)");
+    grad.addColorStop(1, "rgba(255, 220, 170, 0)");
+    sctx.fillStyle = grad;
+    sctx.fillRect(0, 0, SPRITE, SPRITE);
+
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
@@ -55,13 +67,9 @@ export function Particles({ running }: { running: boolean }) {
         p.x += p.vx * dt + Math.sin(now / 1400 + p.phase) * 0.15;
         if (p.y < -10) ps[i] = spawn(false);
         const twinkle = 0.6 + 0.4 * Math.sin(now / 700 + p.phase);
-        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 4);
-        g.addColorStop(0, `rgba(255, 240, 215, ${p.a * twinkle})`);
-        g.addColorStop(1, "rgba(255, 220, 170, 0)");
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2);
-        ctx.fill();
+        const size = p.r * 8;
+        ctx.globalAlpha = p.a * twinkle;
+        ctx.drawImage(sprite, p.x - size / 2, p.y - size / 2, size, size);
       }
       raf = requestAnimationFrame(tick);
     };
