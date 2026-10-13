@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "shadcn-ui": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@heilgar/shadcn-ui-mcp-server@1.0.6"
+      ],
+      "env": {}
+    }
+  }
+}
