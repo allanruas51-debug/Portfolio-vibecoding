@@ -1,0 +1,1100 @@
+@import "tailwindcss";
+
+/*
+ * Tokens de design. A hero é desenhada em "px de referência" (o tamanho das
+ * artes: 1672×941 no desktop, 940×1672 no mobile) e convertida para a
+ * viewport por quatro unidades:
+ *   --ux  1px de referência no eixo X da viewport   (100vw / W)
+ *   --uy  1px de referência no eixo Y da viewport   (100dvh / H)
+ *   --un  escala "contain" (menor das duas) → tamanhos de UI/tipografia
+ *   --uc  escala "cover"   (maior das duas) → palco da cena (céu, boneco)
+ */
+@theme {
+  --font-sans: var(--font-urbanist), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #050b16;
+  --color-night: #071426;
+  --color-sky: #0f3563;
+  --color-ice: #e9f3ff;
+  --color-frost: #bcd7f2;
+  --color-glow: #7cc4ff;
+  --color-neon: #9dffd0;
+  --color-sun: #ffd9a1;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+:root {
+  --W: 1672;
+  --H: 941;
+  --ux: calc(100vw / var(--W));
+  --uy: calc(100dvh / var(--H));
+  --un: min(var(--ux), var(--uy));
+  --uc: max(var(--ux), var(--uy));
+  /* ponto focal do palco (0–1): mantém boneco, lua e sol enquadrados */
+  --fx: 0.36;
+  --fy: 0.5;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  color-scheme: dark;
+}
+
+@media (orientation: portrait) {
+  :root {
+    --W: 940;
+    --H: 1672;
+    --fx: 0.5;
+    --fy: 0.62;
+  }
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-ice);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgb(124 196 255 / 0.35);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-glow);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.sr-only-focusable:not(:focus-visible) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Fullpage ---------- */
+
+.fp-root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.fp-section {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.fp-section[data-visible="false"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ---------- Palco (camadas em coordenadas de referência) ---------- */
+
+.layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.stage {
+  position: absolute;
+  width: calc(var(--W) * var(--uc));
+  height: calc(var(--H) * var(--uc));
+  left: calc((100vw - var(--W) * var(--uc)) * var(--fx));
+  top: calc((100dvh - var(--H) * var(--uc)) * var(--fy));
+}
+
+/* grading do céu: um pouco mais de contraste e saturação, como na ref */
+.stage > picture > img {
+  filter: saturate(var(--sky-sat, 1.14)) contrast(var(--sky-con, 1.07)) brightness(var(--sky-bri, 0.98));
+}
+
+.stage > picture,
+.stage > picture > img,
+.stage > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* camada 2: faixa do horizonte (nuvens + arcos) recortada do próprio céu */
+.mask-horizon {
+  mask-image: linear-gradient(
+    180deg,
+    transparent 30%,
+    #000 46%,
+    #000 70%,
+    transparent 86%
+  );
+}
+
+/* camada 5: nuvens de primeiro plano (máscara gerada a partir do céu) */
+.fg-clouds {
+  --fg-mask: url("/media/fg-mask-desktop.png");
+  mask-image: var(--fg-mask);
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+}
+
+@media (orientation: portrait) {
+  .fg-clouds {
+    --fg-mask: url("/media/fg-mask-mobile.png");
+  }
+}
+
+/* raios de sol (camada 2) */
+.sun-rays {
+  position: absolute;
+  width: calc(var(--W) * var(--uc) * 0.5);
+  aspect-ratio: 1;
+  left: calc(var(--sun-x) * 1%);
+  top: calc(var(--sun-y) * 1%);
+  translate: -50% -50%;
+  background:
+    radial-gradient(closest-side, rgb(255 236 200 / 0.55), rgb(255 214 150 / 0.18) 45%, transparent 75%),
+    repeating-conic-gradient(from 8deg, rgb(255 240 210 / 0.10) 0deg 3deg, transparent 3deg 14deg);
+  mask-image: radial-gradient(closest-side, #000 20%, transparent 100%);
+  mix-blend-mode: screen;
+  --sun-x: 99;
+  --sun-y: 33;
+}
+
+@media (orientation: portrait) {
+  .sun-rays {
+    --sun-x: 98;
+    --sun-y: 47;
+  }
+}
+
+/* camada 8: vinheta + grading */
+.grade {
+  background:
+    radial-gradient(70% 60% at 0% 0%, rgb(2 10 28 / 0.62), transparent 70%),
+    radial-gradient(120% 95% at 50% 42%, transparent 55%, rgb(3 10 24 / 0.42) 100%),
+    linear-gradient(180deg, rgb(3 12 30 / 0.5) 0%, transparent 26%, transparent 78%, rgb(4 12 28 / 0.22) 100%),
+    linear-gradient(90deg, rgb(4 12 30 / 0.25) 0%, transparent 26%, transparent 80%, rgb(255 200 140 / 0.06) 100%);
+}
+
+/* ---------- Título ---------- */
+
+.hero-title {
+  position: absolute;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  line-height: 0.82;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hero-title {
+  --title-texture: image-set(url("/media/sky-desktop-960.avif") type("image/avif"), url("/media/sky-desktop-960.webp") type("image/webp"));
+  /* textura = o próprio céu, alinhado ao palco (efeito vidro) */
+  --tex-size: calc(var(--W) * var(--uc)) calc(var(--H) * var(--uc));
+  --tex-pos: calc((100vw - var(--W) * var(--uc)) * var(--fx) - var(--x) * var(--ux))
+    calc((100dvh - var(--H) * var(--uc)) * var(--fy) - var(--y) * var(--uy));
+  color: transparent;
+  background-image:
+    linear-gradient(180deg, rgb(248 251 255 / 0.97) 0%, rgb(232 242 255 / 0.85) 30%, rgb(190 215 245 / 0.45) 68%, rgb(150 190 235 / 0.12) 100%),
+    var(--title-texture);
+  /* gradiente em "screen" sobre o céu: clareia sem apagar as nuvens (vidro) */
+  background-blend-mode: screen, normal;
+  background-size: 100% 100%, var(--tex-size);
+  background-position: 0 0, var(--tex-pos);
+  background-repeat: no-repeat;
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+.hero-title .word {
+  display: inline-block;
+}
+
+@media (orientation: portrait) {
+  .hero-title {
+    --title-texture: image-set(url("/media/sky-mobile-640.avif") type("image/avif"), url("/media/sky-mobile-640.webp") type("image/webp"));
+    --tex-size: cover;
+    --tex-pos: center;
+  }
+}
+
+/* ---------- UI ---------- */
+
+.ui-label {
+  font-size: max(10px, calc(var(--un) * var(--fs, 13)));
+  letter-spacing: 0.2em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.nav-link {
+  position: relative;
+  color: rgb(222 236 255 / 0.86);
+  transition: color 300ms var(--ease-out-quart), text-shadow 300ms var(--ease-out-quart);
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0.2em;
+  bottom: -0.55em;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-glow), transparent);
+  transform: scaleX(0);
+  transform-origin: 50% 50%;
+  transition: transform 400ms var(--ease-out-expo);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nav-link:hover {
+    color: #fff;
+    text-shadow: 0 0 12px rgb(124 196 255 / 0.85);
+  }
+  .nav-link:hover::after {
+    transform: scaleX(1);
+  }
+}
+
+.nav-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* botão pill com borda em gradiente */
+.pill {
+  --b: 1px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background:
+    linear-gradient(rgb(4 12 26 / 0.82), rgb(4 12 26 / 0.82)) padding-box,
+    linear-gradient(120deg, rgb(225 240 255 / 0.95), rgb(150 190 235 / 0.35) 45%, rgb(225 240 255 / 0.8)) border-box;
+  border: var(--b) solid transparent;
+  box-shadow:
+    0 0 18px rgb(80 160 255 / 0.25),
+    inset 0 0 12px rgb(120 190 255 / 0.12);
+  transition: box-shadow 400ms var(--ease-out-quart);
+  backdrop-filter: blur(6px);
+}
+
+.pill-icon {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  aspect-ratio: 1.15;
+  border-right: 1px solid rgb(150 200 255 / 0.35);
+  overflow: hidden;
+}
+
+.pill-icon svg {
+  transition: transform 450ms var(--ease-out-expo);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pill:hover {
+    box-shadow:
+      0 0 28px rgb(100 180 255 / 0.55),
+      0 0 2px rgb(200 230 255 / 0.9),
+      inset 0 0 16px rgb(140 200 255 / 0.22);
+  }
+  .pill:hover .pill-icon svg {
+    animation: arrow-slide 600ms var(--ease-out-expo);
+  }
+}
+
+@keyframes arrow-slide {
+  0% { transform: translateX(0); }
+  45% { transform: translateX(140%); }
+  46% { transform: translateX(-140%); }
+  100% { transform: translateX(0); }
+}
+
+.rule {
+  display: block;
+  height: 1px;
+  background: rgb(220 235 255 / 0.55);
+}
+
+/* ---------- Boneco ---------- */
+
+.char-btn {
+  position: absolute;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><path d='M6 8h28a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H17l-7 6v-6H6a3 3 0 0 1-3-3V11a3 3 0 0 1 3-3z' fill='%23071426' stroke='%239dffd0' stroke-width='2'/><circle cx='13' cy='18' r='2' fill='%239dffd0'/><circle cx='20' cy='18' r='2' fill='%239dffd0'/><circle cx='27' cy='18' r='2' fill='%239dffd0'/></svg>") 20 20, pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.char-btn:focus-visible {
+  outline-offset: -8px;
+  border-radius: 24px;
+}
+
+.char-media,
+.char-media > video,
+.char-media > canvas,
+.char-media > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.char-glow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  mix-blend-mode: screen;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ---------- Balão de fala ---------- */
+
+.bubble {
+  position: fixed;
+  z-index: 60;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 14px 18px 16px;
+  border-radius: 20px;
+  color: #071426;
+  background: linear-gradient(180deg, #ffffff, #e8f3ff);
+  box-shadow:
+    0 12px 40px rgb(0 20 50 / 0.35),
+    0 0 0 1px rgb(255 255 255 / 0.6),
+    0 0 24px rgb(124 196 255 / 0.35);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-wrap: pretty;
+  transform-origin: var(--tail-x, 30px) 100%;
+}
+
+.bubble[data-placement="bottom"] {
+  transform-origin: var(--tail-x, 30px) 0%;
+}
+
+.bubble-tail {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: calc(var(--tail-x, 30px) - 9px);
+  bottom: -8px;
+  background: #e8f3ff;
+  transform: rotate(45deg);
+  border-radius: 0 0 4px 0;
+}
+
+.bubble[data-placement="bottom"] .bubble-tail {
+  bottom: auto;
+  top: -8px;
+  background: #fff;
+  border-radius: 4px 0 0 0;
+}
+
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: currentColor;
+  animation: caret 900ms steps(1) infinite;
+}
+
+@keyframes caret {
+  50% { opacity: 0; }
+}
+
+/* ---------- Indicador de scroll ---------- */
+
+.scroll-line {
+  position: relative;
+  overflow: hidden;
+  background: rgb(220 235 255 / 0.28);
+}
+
+.scroll-line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 40%;
+  background: linear-gradient(180deg, transparent, #fff);
+  animation: scroll-drop 2.2s var(--ease-out-quart) infinite;
+}
+
+@keyframes scroll-drop {
+  0% { transform: translateY(-100%); }
+  70%, 100% { transform: translateY(250%); }
+}
+
+.mouse-wheel {
+  animation: wheel 1.8s var(--ease-out-quart) infinite;
+}
+
+@keyframes wheel {
+  0% { transform: translateY(-3px); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(5px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-line::after,
+  .mouse-wheel,
+  .caret {
+    animation: none;
+  }
+  .pill:hover .pill-icon svg {
+    animation: none;
+  }
+}
+
+/* posição do boneco no palco (desktop × mobile) */
+.char-pos {
+  position: absolute;
+  left: var(--l-d);
+  top: var(--t-d);
+  width: var(--w-d);
+  height: var(--h-d);
+  rotate: var(--r-d);
+}
+
+@media (orientation: portrait) {
+  .char-pos {
+    left: var(--l-m);
+    top: var(--t-m);
+    width: var(--w-m);
+    height: var(--h-m);
+    rotate: var(--r-m);
+  }
+}
+
+.char-float,
+.char-float > .char-btn {
+  position: absolute;
+  inset: 0;
+}
+
+.char-poster,
+.char-media > video {
+  transition: opacity 250ms linear;
+}
+
+.char-poster[data-hidden="true"],
+.char-media > video[data-visible="false"] {
+  opacity: 0;
+}
+
+.char-head {
+  position: absolute;
+  left: var(--head-x);
+  top: var(--head-y);
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.char-glow {
+  animation: neon-breathe 3s ease-in-out infinite;
+  transition: opacity 300ms var(--ease-out-quart);
+}
+
+@keyframes neon-breathe {
+  0%, 100% { opacity: var(--glow-min, 0.25); }
+  50% { opacity: var(--glow-max, 0.7); }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .char-btn:hover .char-glow {
+    --glow-min: 0.65;
+    --glow-max: 1;
+  }
+}
+
+/* ======================================================================
+   UI da hero — posições medidas nas refs (px de referência).
+   x/y apontam para o topo da caixa-alta (text-box: trim) de cada bloco.
+   ====================================================================== */
+
+.ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  padding: var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l);
+}
+
+.ui a,
+.ui button {
+  pointer-events: auto;
+}
+
+.ui-at {
+  position: absolute;
+  left: calc(var(--x) * var(--ux) + var(--safe-l));
+  top: calc(var(--y) * var(--uy) + var(--safe-t));
+}
+
+.trim {
+  text-box: trim-both cap alphabetic;
+}
+
+.ui-logo {
+  position: absolute;
+  --x: 57;
+  --y: 41;
+  left: calc(var(--x) * var(--ux) + var(--safe-l));
+  top: calc(var(--y) * var(--uy) + var(--safe-t));
+  font-size: max(15px, calc(30 * var(--un)));
+  font-weight: 600;
+  letter-spacing: 0.73em;
+  line-height: 1;
+  text-box: trim-both cap alphabetic;
+  color: #fff;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.ui-nav {
+  position: absolute;
+  --x: 590;
+  --y: 45;
+  left: calc(var(--x) * var(--ux));
+  top: calc(var(--y) * var(--uy) + var(--safe-t));
+}
+
+.ui-nav ul {
+  display: flex;
+  gap: calc(44 * var(--ux));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-nav a,
+.ui-burger-panel a {
+  display: inline-block;
+  font-size: max(10px, calc(13.2 * var(--un)));
+  font-weight: 500;
+  letter-spacing: 0.19em;
+  line-height: 1;
+  text-box: trim-both cap alphabetic;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* área de toque ≥ 44px sem mexer no visual */
+.ui-nav a::before,
+.ui-scroll::before,
+.ui-cta::before {
+  content: "";
+  position: absolute;
+  inset: -14px -8px;
+}
+
+.ui-cta {
+  position: absolute;
+  --x: 1390;
+  --y: 36;
+  left: calc(var(--x) * var(--ux) - var(--safe-r));
+  top: calc(var(--y) * var(--uy) + var(--safe-t));
+  width: calc(220 * var(--un));
+  min-width: 184px;
+  height: max(32px, calc(36 * var(--un)));
+  font-size: max(10px, calc(11.4 * var(--un)));
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pill-label {
+  flex: 1;
+  text-align: center;
+  padding-right: 0.4em;
+}
+
+.ui-burger,
+.ui-burger-panel {
+  display: none;
+}
+
+/* título */
+.hero-title {
+  --x: 46;
+  --y: 133;
+  left: calc(var(--x) * var(--ux));
+  top: calc(var(--y) * var(--uy));
+  font-size: calc(279 * var(--un));
+  letter-spacing: 0;
+  word-spacing: -0.115em;
+  /* a ref usa uma black mais estreita: Montserrat comprimida em X */
+  scale: 0.755 1;
+  transform-origin: 0 0;
+}
+
+.hero-title .word {
+  text-box: trim-both cap alphabetic;
+}
+
+.ui-tagline {
+  --x: 1543;
+  --y: 150;
+}
+
+.ui-pillars {
+  --x: 58;
+  --y: 765;
+}
+
+.ui-stack {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--step, 19.3) * var(--un) - 1em * 0.7);
+  font-weight: 500;
+  color: rgb(232 241 255 / 0.92);
+  white-space: nowrap;
+}
+
+.ui-stack > span {
+  line-height: 1;
+  text-box: trim-both cap alphabetic;
+}
+
+.ui-tagline .ui-label,
+.ui-pillars .ui-label,
+.ui-scroll .ui-label {
+  --fs: 11.6;
+}
+
+.ui-tagline .rule {
+  width: calc(30 * var(--un));
+  margin-top: calc(29 * var(--un));
+}
+
+.ui-pillars .rule {
+  width: calc(38 * var(--un));
+  margin-top: calc(32 * var(--un));
+}
+
+.ui-scroll {
+  position: absolute;
+  --x: 1528;
+  --y: 806;
+  left: calc(var(--x) * var(--ux) - var(--safe-r));
+  top: calc(var(--y) * var(--uy));
+  display: flex;
+  align-items: flex-start;
+  gap: calc(14 * var(--un));
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgb(232 241 255 / 0.92);
+  cursor: pointer;
+  text-align: left;
+}
+
+.ui-scroll .ui-label {
+  padding-top: calc(6 * var(--un));
+}
+
+.ui-scroll-line {
+  display: block;
+  width: 1px;
+  height: calc(54 * var(--un));
+}
+
+.ui-scroll-mouse {
+  display: none;
+}
+
+/* ---------- Retrato (design mobile) ---------- */
+@media (orientation: portrait) {
+  .ui-logo {
+    --y: 55;
+    left: 50%;
+    translate: -50% 0;
+    font-size: max(17px, calc(37 * var(--un)));
+    letter-spacing: 0.48em;
+    margin-left: 0.25em;
+  }
+
+  .ui-nav {
+    --y: 122;
+    left: 50%;
+    translate: -50% 0;
+  }
+
+  .ui-nav ul {
+    gap: max(12px, calc(32 * var(--ux)));
+  }
+
+  .ui-nav a {
+    font-size: max(10px, calc(16.5 * var(--un)));
+    letter-spacing: 0.11em;
+  }
+
+  .ui-cta {
+    --y: 186;
+    left: 50%;
+    translate: -50% 0;
+    width: max(200px, calc(336 * var(--un)));
+    height: max(40px, calc(56 * var(--un)));
+    font-size: max(11px, calc(18 * var(--un)));
+  }
+
+  .hero-title {
+    --y: 300;
+    left: 50%;
+    translate: -50% 0;
+    font-size: calc(260 * var(--ux));
+    text-align: center;
+    transform-origin: 50% 0;
+  }
+
+  .hero-title .word {
+    display: block;
+    margin-bottom: calc(16 * var(--ux));
+  }
+
+  /* na ref mobile "VIBE" é espaçado para alinhar com "CODING" */
+  /* deslocado à esquerda para abrir espaço ao "Presença digital…";
+     margem (e não transform/position) para continuar dentro do clip do texto */
+  .hero-title .word:first-child {
+    margin-left: calc(-120 * var(--ux));
+    letter-spacing: 0.19em;
+    margin-right: -0.19em;
+  }
+
+  .ui-dot {
+    display: none;
+  }
+
+  .ui-tagline {
+    --x: 773;
+    --y: 357;
+    padding-left: calc(15 * var(--ux));
+    border-left: 1px solid rgb(220 235 255 / 0.55);
+  }
+
+  .ui-tagline .rule {
+    display: none;
+  }
+
+  .ui-pillars {
+    --x: 60;
+    --y: 1462;
+    padding-left: calc(20 * var(--ux));
+    border-left: 1px solid rgb(220 235 255 / 0.55);
+  }
+
+  .ui-tagline .ui-label,
+  .ui-pillars .ui-label,
+  .ui-scroll .ui-label {
+    --fs: 17;
+  }
+
+  .ui-tagline {
+    --step: 22.7;
+  }
+
+  .ui-pillars {
+    --step: 25.3;
+  }
+
+  .ui-pillars .rule {
+    width: calc(48 * var(--un));
+    margin-top: calc(26 * var(--un));
+    margin-left: 0;
+  }
+
+  .ui-scroll {
+    --x: 745;
+    --y: 1522;
+    --step: 24;
+    gap: calc(19 * var(--ux));
+  }
+
+  .ui-scroll .ui-label {
+    padding-top: 0;
+  }
+
+  .ui-scroll-line {
+    display: none;
+  }
+
+  .ui-scroll-mouse {
+    display: block;
+    width: max(12px, calc(23 * var(--un)));
+    height: auto;
+  }
+}
+
+/* linha de links não cabe: vira hambúrguer */
+@media (orientation: portrait) and (max-width: 374px) {
+  .ui-nav {
+    display: none;
+  }
+
+  .ui-burger {
+    position: absolute;
+    top: calc(12px + var(--safe-t));
+    right: calc(12px + var(--safe-r));
+    display: grid;
+    place-content: center;
+    gap: 7px;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgb(150 210 255 / 0.4);
+    border-radius: 999px;
+    background: rgb(6 18 38 / 0.55);
+    backdrop-filter: blur(6px);
+    z-index: 2;
+  }
+
+  .ui-burger span {
+    display: block;
+    width: 18px;
+    height: 1.5px;
+    background: #fff;
+    transition: transform 350ms var(--ease-out-expo);
+  }
+
+  .ui-burger[data-open="true"] span:first-child {
+    transform: translateY(4.25px) rotate(45deg);
+  }
+
+  .ui-burger[data-open="true"] span:last-child {
+    transform: translateY(-4.25px) rotate(-45deg);
+  }
+
+  .ui-burger-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    align-items: center;
+    justify-content: center;
+    background: rgb(4 12 28 / 0.82);
+    backdrop-filter: blur(14px);
+    pointer-events: auto;
+  }
+
+  .ui-burger-panel ul {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ui-burger-panel a {
+    font-size: 15px;
+    padding: 10px 6px;
+  }
+}
+
+.bubble-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(180deg, #11325c, #071426);
+  box-shadow: 0 0 0 1px rgb(124 196 255 / 0.5), 0 0 18px rgb(80 160 255 / 0.35);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.bubble-cta:hover {
+  box-shadow: 0 0 0 1px rgb(160 215 255 / 0.9), 0 0 26px rgb(100 180 255 / 0.6);
+}
+
+.cloud-veil {
+  opacity: 0;
+  visibility: hidden;
+  background:
+    radial-gradient(80% 60% at 50% 60%, rgb(255 250 244 / 0.98), rgb(226 238 252 / 0.95) 55%, rgb(170 200 235 / 0.92));
+}
+
+/* hover do boneco: escala (propriedade `scale` não briga com o transform do GSAP) */
+.char-btn {
+  transition: scale 500ms var(--ease-out-expo);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .char-btn:hover {
+    scale: 1.03;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .char-btn {
+    transition: none;
+  }
+  .char-glow {
+    animation: none;
+  }
+}
+
+.char-pos.char-fill {
+  inset: 0;
+  rotate: none;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- Dock (boneco nas outras seções) ---------- */
+.dock {
+  position: fixed;
+  z-index: 40;
+  right: calc(16px + var(--safe-r));
+  bottom: calc(16px + var(--safe-b));
+  width: clamp(120px, 16vw, 220px);
+  aspect-ratio: var(--dock-ratio, 1.14);
+  visibility: hidden;
+}
+
+/* ---------- Loader ---------- */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(120% 90% at 50% 40%, #0d2a50, var(--color-ink) 70%);
+}
+
+.loader-inner {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+}
+
+.loader-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.6em;
+  margin-right: -0.6em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.loader-bar {
+  position: relative;
+  display: block;
+  width: 140px;
+  height: 1px;
+  overflow: hidden;
+  background: rgb(220 235 255 / 0.18);
+}
+
+.loader-bar > span {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--color-glow), #fff);
+  box-shadow: 0 0 10px var(--color-glow);
+  transition: transform 300ms var(--ease-out-quart);
+}
+
+/* ---------- Seção 2 (placeholder) ---------- */
+.projects-root {
+  background:
+    radial-gradient(90% 70% at 70% 20%, rgb(40 90 160 / 0.45), transparent 70%),
+    linear-gradient(180deg, #dfeaf7 0%, #8fb3dc 6%, #10305a 38%, var(--color-ink) 100%);
+}
+
+.projects-root {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 20px;
+  padding: max(24px, 8vw);
+}
+
+.projects-root > * {
+  max-width: 1100px;
+}
+
+.projects-kicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-glow);
+}
+
+.projects-title {
+  margin: 0;
+  font-size: clamp(40px, 7vw, 110px);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.projects-text {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgb(222 236 255 / 0.8);
+  text-wrap: pretty;
+}
+
+/* acabamento do título: borda clara e sombra suave (desktop) / glow azul (mobile) */
+.hero-title {
+  -webkit-text-stroke: 1px rgb(255 255 255 / 0.28);
+  filter: drop-shadow(0 0 1px rgb(255 255 255 / 0.35)) drop-shadow(0 10px 24px rgb(4 18 42 / 0.28));
+}
+
+@media (orientation: portrait) {
+  .hero-title {
+    -webkit-text-stroke: 1.5px rgb(178 220 255 / 0.85);
+    filter: drop-shadow(0 0 6px rgb(90 170 255 / 0.75)) drop-shadow(0 0 22px rgb(40 120 255 / 0.45));
+  }
+}
