@@ -44,7 +44,7 @@ function pickLine(prev: number) {
  * cima ou com foco dentro) e fecha com Esc ou toque fora.
  */
 export function SpeechBubble() {
-  const { onSpeak } = useExperience();
+  const { onSpeak, index } = useExperience();
   const [bubble, setBubble] = useState<Bubble | null>(null);
   const [typed, setTyped] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
@@ -64,15 +64,22 @@ export function SpeechBubble() {
     clearTimer();
     const el = ref.current;
     if (!el) return setBubble(null);
+    const key = Number(el.dataset.key);
     const gsap = ensureGsap();
     gsap.to(el, {
       scale: 0.85,
       autoAlpha: 0,
       duration: prefersReducedMotion() ? 0.1 : 0.18,
       ease: "power2.in",
-      onComplete: () => setBubble(null),
+      // só remove o balão que estava fechando (um clique novo pode ter aberto outro)
+      onComplete: () => setBubble((b) => (b && b.key === key ? null : b)),
     });
   }, []);
+
+  // trocou de seção: a âncora (cabeça) sumiu, então o balão também
+  useEffect(() => {
+    close();
+  }, [index, close]);
 
   const startTimer = useCallback(
     (ms: number) => {
@@ -207,6 +214,7 @@ export function SpeechBubble() {
         <div
           key={bubble.key}
           ref={ref}
+          data-key={bubble.key}
           className="bubble"
           role="group"
           aria-label="Fala do Allan"

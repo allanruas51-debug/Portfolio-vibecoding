@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { character } from "@/config/character";
 import { ensureGsap } from "@/lib/gsap";
 import { prefersReducedMotion, usePortrait } from "@/lib/media";
@@ -16,6 +16,10 @@ export function CharacterDock() {
   const portrait = usePortrait();
   const ref = useRef<HTMLDivElement>(null);
   const shown = index > 0;
+  // monta o vídeo só na primeira vez que o dock aparece: evita baixar o
+  // mesmo vídeo duas vezes no carregamento da página
+  const [mounted, setMounted] = useState(false);
+  if (shown && !mounted) setMounted(true);
   const media = portrait ? character.mobile : character.desktop;
 
   useEffect(() => {
@@ -42,7 +46,7 @@ export function CharacterDock() {
       aria-hidden={!shown}
       inert={!shown}
     >
-      <CharacterScene fill playing={shown} onActivate={speak} />
+      {mounted && <CharacterScene fill playing={shown} onActivate={speak} />}
     </div>
   );
 }

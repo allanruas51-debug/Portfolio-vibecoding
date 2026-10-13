@@ -1,9 +1,9 @@
 // Captura frames reais (CDP screencast) da entrada e da transição ida/volta.
-// Uso: node scripts/review/record.mjs <largura> <altura> <pasta_saida>
+// Uso: node scripts/review/record.mjs <largura> <altura> <pasta_saida> [url]
 import { chromium } from "@playwright/test";
 import { mkdirSync, writeFileSync } from "node:fs";
 
-const [w, h, dir] = process.argv.slice(2);
+const [w, h, dir, url = "http://localhost:3000/"] = process.argv.slice(2);
 mkdirSync(dir, { recursive: true });
 const exe = process.env.CHROMIUM_PATH;
 const browser = await chromium.launch(exe ? { executablePath: exe } : {});
@@ -22,7 +22,7 @@ cdp.on("Page.screencastFrame", async (f) => {
 });
 const mark = (label) => log.push({ label, t: t0 ? +((Date.now() / 1000) - t0).toFixed(3) : 0 });
 await cdp.send("Page.startScreencast", { format: "jpeg", quality: 70, maxWidth: +w, maxHeight: +h, everyNthFrame: 1 });
-await page.goto("http://localhost:3000/");
+await page.goto(url);
 await page.waitForTimeout(3500);
 mark("ArrowDown");
 await page.keyboard.press("ArrowDown");

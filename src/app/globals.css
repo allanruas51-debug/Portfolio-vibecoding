@@ -102,6 +102,13 @@ body {
   overflow: hidden;
 }
 
+/* a seção recebe foco programático após a navegação (leitores de tela);
+   o contorno de foco ali só atrapalharia */
+.fp-section:focus,
+.fp-section:focus-visible {
+  outline: none;
+}
+
 .fp-section[data-visible="false"] {
   visibility: hidden;
   pointer-events: none;

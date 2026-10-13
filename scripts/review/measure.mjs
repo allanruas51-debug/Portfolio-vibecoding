@@ -6,7 +6,7 @@ const [w, h] = process.argv.slice(2).map(Number);
 const exe = process.env.CHROMIUM_PATH;
 const browser = await chromium.launch(exe ? { executablePath: exe } : {});
 const page = await browser.newPage({ viewport: { width: w, height: h } });
-await page.goto("http://localhost:3000/", { waitUntil: "networkidle" });
+await page.goto(process.env.URL || "http://localhost:3000/", { waitUntil: "networkidle" });
 await page.waitForTimeout(4000);
 const out = await page.evaluate(() => {
   const r = (el) => {

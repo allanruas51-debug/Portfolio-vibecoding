@@ -1,9 +1,9 @@
 // Captura uma sequência de frames (entrada + transição ida/volta) numa folha de contato.
-// Uso: node scripts/review/sequence.mjs <largura> <altura> <saida.jpg>
+// Uso: node scripts/review/sequence.mjs <largura> <altura> <saida.jpg> [url]
 import { chromium } from "@playwright/test";
 import sharp from "sharp";
 
-const [w, h, out] = process.argv.slice(2);
+const [w, h, out, url = "http://localhost:3000/"] = process.argv.slice(2);
 const exe = process.env.CHROMIUM_PATH;
 const browser = await chromium.launch(exe ? { executablePath: exe } : {});
 const page = await browser.newPage({ viewport: { width: +w, height: +h } });
@@ -11,7 +11,7 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const shots = [];
 const snap = async (label) => shots.push({ label, buf: await page.screenshot() });
-await page.goto("http://localhost:3000/");
+await page.goto(url);
 for (const t of [150, 500, 500, 500, 600, 900]) {
   await page.waitForTimeout(t);
   await snap(`entrada`);

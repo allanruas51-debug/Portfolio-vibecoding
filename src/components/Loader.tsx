@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { character } from "@/config/character";
 import { ensureGsap } from "@/lib/gsap";
 import { prefersReducedMotion } from "@/lib/media";
 import { useExperience } from "./ExperienceProvider";
@@ -10,26 +9,22 @@ import { useExperience } from "./ExperienceProvider";
 const MAX_MS = 1500;
 const MIN_MS = 450;
 
-function preloadImage(src: string) {
+/** Resolve quando a <img> do DOM terminar (load/erro), seja qual for o
+ * `currentSrc` que o <picture> escolheu — sem baixar nada em duplicidade. */
+function whenLoaded(img: HTMLImageElement | null) {
   return new Promise<void>((resolve) => {
-    const img = new Image();
-    img.onload = img.onerror = () => resolve();
-    img.src = src;
-    if (img.complete) resolve();
+    if (!img || (img.complete && img.currentSrc)) return resolve();
+    img.addEventListener("load", () => resolve(), { once: true });
+    img.addEventListener("error", () => resolve(), { once: true });
   });
 }
 
-/** Assets críticos da orientação atual (os mesmos que a hero pede primeiro). */
-function criticalAssets() {
-  const portrait = window.matchMedia("(orientation: portrait)").matches;
-  const avif = document.createElement("canvas").toDataURL("image/avif").startsWith("data:image/avif");
-  const ext = avif ? "avif" : "webp";
-  const wide = window.innerWidth * Math.min(window.devicePixelRatio || 1, 2);
-  const sky = portrait
-    ? `/media/sky-mobile-${wide > 700 ? 940 : 640}.${ext}`
-    : `/media/sky-desktop-${wide > 1100 ? 1536 : 960}.${ext}`;
-  const media = portrait ? character.mobile : character.desktop;
-  return [sky, media.poster];
+/** Assets críticos: o céu e o poster do boneco que a hero já está pedindo. */
+function criticalImages() {
+  return [
+    document.querySelector<HTMLImageElement>('#hero [data-layer="sky"] img'),
+    document.querySelector<HTMLImageElement>("#hero .char-poster"),
+  ];
 }
 
 /**
@@ -44,7 +39,7 @@ export function Loader() {
 
   useEffect(() => {
     const started = performance.now();
-    const tasks: Promise<unknown>[] = [...criticalAssets().map(preloadImage), document.fonts.ready];
+    const tasks: Promise<unknown>[] = [...criticalImages().map(whenLoaded), document.fonts.ready];
     let finished = 0;
     tasks.forEach((t) =>
       t.then(() => {
