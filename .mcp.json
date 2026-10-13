@@ -15,6 +15,15 @@
       "headers": {
         "x-api-key": "${API_KEY_21ST}"
       }
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.83"
+      ],
+      "env": {}
     }
   }
 }
